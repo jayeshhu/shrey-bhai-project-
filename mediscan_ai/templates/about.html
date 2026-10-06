@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}About — MediScan AI{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+  {% set active_page = 'about' %}{% include '_sidebar.html' %}
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <button class="hamburger" aria-label="Menu">☰</button>
+      <div>
+        <div class="page-title">About MediScan AI</div>
+        <div class="page-breadcrumb">Educational medical report analysis tool</div>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      {# ── Hero ── #}
+      <div class="card mb-24" style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.08));border-color:rgba(59,130,246,0.25);text-align:center;padding:48px 32px">
+        <div style="font-size:56px;margin-bottom:16px">🏥</div>
+        <h1 style="font-size:32px;font-weight:900;margin-bottom:12px">MediScan AI</h1>
+        <p style="font-size:16px;color:var(--text-secondary);max-width:600px;margin:0 auto 20px">
+          Understand your medical reports with intelligent document analysis.
+        </p>
+        <div class="disclaimer-box" style="max-width:640px;margin:0 auto;text-align:left">
+          <span class="disclaimer-icon">⚕️</span>
+          <span>
+            <strong>Important Disclaimer:</strong> MediScan AI is an educational and informational tool. It does not provide medical diagnosis or treatment recommendations. Always consult a qualified healthcare professional for medical decisions.
+          </span>
+        </div>
+      </div>
+
+      {# ── Features ── #}
+      <div class="card mb-20">
+        <div class="card-title mb-16" style="font-size:20px">✨ Features</div>
+        <div class="feature-grid">
+          {% set features = [
+            ('🤖', 'AI Report Analysis', 'Get plain-language explanations of your medical test results using AI.'),
+            ('🔍', 'Smart Data Extraction', 'Automatic text extraction from PDFs and scanned images using OCR.'),
+            ('📊', 'Health Data Visualization', 'Beautiful charts showing your test values and trends over time.'),
+            ('⚖️', 'Report Comparison', 'Compare two reports side-by-side to track changes in your values.'),
+            ('💬', 'Interactive Q&A', 'Ask questions about your report and get understandable answers.'),
+            ('📥', 'Download Summary', 'Download a formatted PDF summary of your report analysis.'),
+            ('🔒', 'Secure & Private', 'Your data stays on your local machine. No cloud storage.'),
+            ('🧪', 'Demo Mode', 'Try the app with realistic sample data without uploading real documents.'),
+          ] %}
+          {% for icon, name, desc in features %}
+          <div class="feature-card">
+            <div class="feature-icon">{{ icon }}</div>
+            <div class="feature-name">{{ name }}</div>
+            <div class="feature-desc">{{ desc }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Tech Stack ── #}
+      <div class="card mb-20">
+        <div class="card-title mb-16" style="font-size:20px">🛠️ Technology Stack</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          {% set tech = [
+            ('🐍', 'Python 3', 'Core language'),
+            ('🌐', 'Flask', 'Web framework'),
+            ('🗃️', 'SQLite + SQLAlchemy', 'Database & ORM'),
+            ('🐼', 'Pandas', 'Data analysis'),
+            ('🔢', 'NumPy', 'Numerical computing'),
+            ('📈', 'Matplotlib', 'Data visualization'),
+            ('📄', 'PyMuPDF', 'PDF text extraction'),
+            ('👁️', 'EasyOCR', 'Image text recognition'),
+            ('🖼️', 'Pillow', 'Image processing'),
+            ('🔐', 'Werkzeug', 'Password hashing'),
+            ('🤖', 'AI API', 'Gemini / OpenAI / Groq'),
+            ('🔑', 'python-dotenv', 'Environment variables'),
+          ] %}
+          {% for icon, name, desc in tech %}
+          <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">{{ icon }}</span>
+            <div>
+              <div style="font-size:13px;font-weight:700">{{ name }}</div>
+              <div style="font-size:11px;color:var(--text-muted)">{{ desc }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Safety ── #}
+      <div class="card" style="border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.04)">
+        <div class="card-title mb-12" style="color:var(--danger)">🚫 What MediScan AI Does NOT Do</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          {% set nots = [
+            'Diagnose any disease or medical condition',
+            'Prescribe medication or treatment',
+            'Invent test values or reference ranges',
+            'Replace consultation with a qualified healthcare professional',
+            'Provide clinical certainty about any health matter',
+          ] %}
+          {% for item in nots %}
+          <li style="display:flex;gap:10px;align-items:center;font-size:14px;color:var(--text-secondary)">
+            <span style="color:var(--danger)">✗</span> {{ item }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}

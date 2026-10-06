@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.original_filename }} — MediScan AI{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+  {% set active_page = 'reports' %}{% include '_sidebar.html' %}
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <button class="hamburger" aria-label="Menu">☰</button>
+      <div>
+        <div class="page-title">Report Details</div>
+        <div class="page-breadcrumb">
+          <a href="/reports" style="color:var(--text-muted)">Reports</a> ›
+          {{ report.original_filename[:40] }}{% if report.original_filename|length > 40 %}…{% endif %}
+        </div>
+      </div>
+      <div class="header-actions">
+        {% if report.analysis_status in ('completed', 'demo') %}
+          <a href="/reports/{{ report.id }}/download" class="btn btn-outline btn-sm">⬇️ Download Summary</a>
+        {% endif %}
+        <a href="/reports" class="btn btn-ghost btn-sm">← Back</a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      {# Hidden input for JS #}
+      <input type="hidden" id="reportId" value="{{ report.id }}">
+
+      {# ── Report Header ── #}
+      <div class="report-header-card mb-20">
+        <div class="report-doc-icon">
+          {% if 'blood' in report.document_type|lower %}🩸
+          {% elif 'lab' in report.document_type|lower %}🔬
+          {% elif 'prescription' in report.document_type|lower %}💊
+          {% elif 'radiology' in report.document_type|lower %}🩻
+          {% else %}📋{% endif %}
+        </div>
+        <div class="report-title-block" style="flex:1">
+          <div class="report-name">{{ report.original_filename }}</div>
+          <div class="report-meta">
+            <div class="report-meta-item">📁 {{ report.document_type }}</div>
+            <div class="report-meta-item">🗓️ {{ report.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+            <div class="report-meta-item">
+              {% set badge_label, badge_class = report.get_status_badge() %}
+              <span class="badge {{ badge_class }}">{{ badge_label }}</span>
+            </div>
+            {% if report.is_demo %}
+            <div class="report-meta-item">
+              <span class="badge badge-demo">⭐ Demo / Sample Data</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if report.is_demo %}
+      <div class="disclaimer-box mb-20" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);color:#FCD34D">
+        <span class="disclaimer-icon">⭐</span>
+        <span>
+          <strong>Demo Report:</strong> This contains fictional sample data for educational demonstration purposes only. It does not represent any real patient's medical information.
+        </span>
+      </div>
+      {% endif %}
+
+      {# ── Main Grid ── #}
+      <div class="grid-2" style="align-items:start">
+
+        {# Left Column #}
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          {# Patient Info (if extracted) #}
+          {% if patient_info.patient_name or patient_info.patient_age or patient_info.report_date %}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">👤 Document Information</div>
+            </div>
+            <div class="patient-info-grid">
+              {% if patient_info.patient_name %}
+              <div class="patient-info-item">
+                <div class="patient-info-label">Patient Name</div>
+                <div class="patient-info-value">{{ patient_info.patient_name }}</div>
+              </div>
+              {% endif %}
+              {% if patient_info.patient_age %}
+              <div class="patient-info-item">
+                <div class="patient-info-label">Age</div>
+                <div class="patient-info-value">{{ patient_info.patient_age }}</div>
+              </div>
+              {% endif %}
+              {% if patient_info.patient_gender %}
+              <div class="patient-info-item">
+                <div class="patient-info-label">Gender</div>
+                <div class="patient-info-value">{{ patient_info.patient_gender }}</div>
+              </div>
+              {% endif %}
+              {% if patient_info.report_date %}
+              <div class="patient-info-item">
+                <div class="patient-info-label">Report Date</div>
+                <div class="patient-info-value">{{ patient_info.report_date }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          {# AI Summary #}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🤖 AI Analysis</div>
+              {% if not ai_configured %}
+              <span class="badge badge-warning">Not Configured</span>
+              {% endif %}
+            </div>
+
+            {% if not ai_configured %}
+            <div class="ai-not-configured mb-12">
+              ⚠️ AI not configured. Configure API key in .env for intelligent analysis.
+            </div>
+            {% endif %}
+
+            <div class="ai-summary-box">
+              <div class="ai-label">📝 Summary</div>
+              <div class="ai-summary-text">
+                {{ report.ai_summary or "AI summary not available. The extracted test data is available below." }}
+              </div>
+            </div>
+          </div>
+
+          {# Key Findings #}
+          {% if ai_findings %}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🔍 Key Observations</div>
+            </div>
+            <ul class="findings-list">
+              {% for finding in ai_findings %}
+              <li class="finding-item">
+                <span class="finding-bullet">•</span>
+                <span>{{ finding }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {# Chart #}
+          {% if report.chart_path %}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📊 Test Results Chart</div>
+            </div>
+            <div class="chart-container">
+              <img src="{{ url_for('static', filename=report.chart_path) }}"
+                   alt="Test results bar chart" loading="lazy">
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+
+        {# Right Column #}
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          {# Test Results Table #}
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">🧪 Test Results</div>
+                <div class="card-subtitle">
+                  {{ test_results|length }} test{{ 's' if test_results|length != 1 }} extracted
+                  — <span style="color:var(--success)">{{ status_breakdown.normal }} normal</span>
+                  {% if status_breakdown.review > 0 %}
+                  · <span style="color:var(--danger)">{{ status_breakdown.review }} to review</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% if test_results %}
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Test Name</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Reference Range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for tr in test_results %}
+                  {% set status = tr.get_value_status() %}
+                  <tr>
+                    <td class="td-name">{{ tr.test_name }}</td>
+                    <td>
+                      <span class="value-cell test-status-{{ status }}">{{ tr.value }}</span>
+                      {% if status == 'review' %}
+                      <span title="Value outside provided reference range" style="cursor:help">⚠️</span>
+                      {% elif status == 'normal' %}
+                      <span title="Within provided reference range" style="cursor:help;color:var(--success)">✓</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="text-muted fs-13">{{ tr.unit or '—' }}</span>
+                    </td>
+                    <td>
+                      <span class="ref-range">{{ tr.reference_range or 'Not provided in document' }}</span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:12px;padding:10px;background:var(--bg-surface);border-radius:8px;font-size:12px;color:var(--text-muted)">
+              <strong>Note:</strong> Status indicators (✓ / ⚠️) are based only on reference ranges provided in this document. A ⚠️ indicates the value is outside the stated range — always discuss with your doctor.
+            </div>
+
+            {% else %}
+            <div class="empty-state" style="padding:30px">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-title">No Structured Data Extracted</div>
+              <div class="empty-desc">The document may not contain standard test tables, or text extraction was limited.</div>
+            </div>
+            {% endif %}
+          </div>
+
+          {# Questions for Doctor #}
+          {% if ai_questions %}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🩺 Questions to Discuss With Your Doctor</div>
+            </div>
+            <ul class="findings-list">
+              {% for q in ai_questions %}
+              <li class="finding-item" style="border-left-color:var(--success)">
+                <span style="color:var(--success)">?</span>
+                <span>{{ q }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {# Ask AI Q&A #}
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">💬 Ask About This Report</div>
+                <div class="card-subtitle">Get plain-language explanations</div>
+              </div>
+            </div>
+
+            {# Quick question pills #}
+            <div class="question-pills" id="questionPills">
+              <span class="question-pill" data-question="What does this report tell me about my health?">What does this report tell me?</span>
+              <span class="question-pill" data-question="Explain this report in simple language.">Explain in simple terms</span>
+              <span class="question-pill" data-question="Which values should I discuss with my doctor?">What to discuss with doctor?</span>
+              <span class="question-pill" data-question="What lifestyle changes could help improve these results?">Lifestyle tips?</span>
+            </div>
+
+            <div class="qa-box">
+              <div class="qa-messages" id="qaMessages">
+                {# Previous Q&A history #}
+                {% for entry in history %}
+                <div class="message user">
+                  <div class="message-avatar">👤</div>
+                  <div class="message-bubble">{{ entry.question }}</div>
+                </div>
+                <div class="message ai">
+                  <div class="message-avatar">🤖</div>
+                  <div class="message-bubble">{{ entry.answer }}</div>
+                </div>
+                {% endfor %}
+
+                {% if not history %}
+                <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
+                  Ask a question about this report to get an explanation.
+                </div>
+                {% endif %}
+              </div>
+
+              <form class="qa-input-row" id="qaForm">
+                <input type="text" class="form-control" id="qaInput"
+                       placeholder="Ask something about this report..."
+                       maxlength="500" autocomplete="off">
+                <span id="charCounter" style="font-size:11px;color:var(--text-muted);align-self:center;white-space:nowrap">0/500</span>
+                <button type="submit" class="btn btn-primary btn-sm" id="qaBtn">↵ Send</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {# ── Safety Disclaimer ── #}
+      <div class="disclaimer-box mt-20">
+        <span class="disclaimer-icon">⚕️</span>
+        <div>
+          <strong>Medical Safety Notice:</strong>
+          {{ report.ai_safety_note or "This application provides educational and informational assistance only. It does not provide medical diagnosis or treatment. Consult a qualified healthcare professional for medical decisions." }}
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}

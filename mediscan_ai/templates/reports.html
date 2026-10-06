@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}My Reports — MediScan AI{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+  {% set active_page = 'reports' %}{% include '_sidebar.html' %}
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <button class="hamburger" aria-label="Menu">☰</button>
+      <div>
+        <div class="page-title">My Reports</div>
+        <div class="page-breadcrumb">{{ reports|length }} report{{ 's' if reports|length != 1 }}</div>
+      </div>
+      <div class="header-actions">
+        <a href="/upload" class="btn btn-primary btn-sm">⬆️ Upload New</a>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      {% if reports %}
+
+        {# Search & Filter #}
+        <div class="search-bar mb-20">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="reportSearch" class="form-control"
+                   placeholder="Search reports by name...">
+          </div>
+          <select id="filterStatus" class="form-control" style="width:180px">
+            <option value="">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="demo">Demo</option>
+            <option value="failed">Failed</option>
+            <option value="pending">Pending</option>
+          </select>
+          <a href="/compare" class="btn btn-outline btn-sm">⚖️ Compare</a>
+        </div>
+
+        <div class="card">
+          <div class="table-wrapper">
+            <table id="reportsTable">
+              <thead>
+                <tr>
+                  <th>Report Name</th>
+                  <th>Type</th>
+                  <th>Upload Date</th>
+                  <th>Tests Found</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for report in reports %}
+                {% set badge_label, badge_class = report.get_status_badge() %}
+                <tr class="report-row"
+                    data-name="{{ report.original_filename | lower }}"
+                    data-status="{{ report.analysis_status }}">
+                  <td>
+                    <div class="td-name">
+                      {% if report.is_demo %}<span style="font-size:13px">⭐</span>{% endif %}
+                      {{ report.original_filename }}
+                    </div>
+                    {% if report.is_demo %}
+                    <div style="font-size:11px;color:var(--text-muted)">Demo / Sample Data</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="pill">{{ report.document_type[:25] }}{% if report.document_type|length > 25 %}…{% endif %}</span>
+                  </td>
+                  <td style="white-space:nowrap">
+                    {{ report.created_at.strftime('%d %b %Y') }}<br>
+                    <span style="font-size:11px;color:var(--text-muted)">{{ report.created_at.strftime('%H:%M') }}</span>
+                  </td>
+                  <td>
+                    <span style="font-weight:700">{{ report.test_results|length }}</span>
+                    <span style="color:var(--text-muted);font-size:12px"> tests</span>
+                  </td>
+                  <td>
+                    <span class="badge {{ badge_class }}">
+                      <span class="status-dot
+                        {{ 'dot-green' if report.analysis_status == 'completed' }}
+                        {{ 'dot-blue' if report.analysis_status == 'demo' }}
+                        {{ 'dot-red' if report.analysis_status == 'failed' }}
+                        {{ 'dot-amber' if report.analysis_status in ('pending','processing') }}
+                      "></span>
+                      {{ badge_label }}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <a href="/reports/{{ report.id }}" class="btn btn-ghost btn-sm">👁️ View</a>
+                      <a href="/compare?pre={{ report.id }}" class="btn btn-ghost btn-sm">⚖️</a>
+                      <button class="btn btn-ghost btn-sm"
+                              onclick="confirmDelete({{ report.id }}, '{{ report.original_filename | replace("'","") }}')"
+                              style="color:var(--danger)">🗑️</button>
+                    </div>
+                    {# Hidden form for delete #}
+                    <form id="delete-form-{{ report.id }}" method="POST"
+                          action="/reports/{{ report.id }}/delete" style="display:none"></form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div id="noResults" style="display:none;text-align:center;padding:40px;color:var(--text-muted)">
+            No reports match your search.
+          </div>
+        </div>
+
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">No Reports Yet</div>
+          <div class="empty-desc">You haven't uploaded any medical reports. Start by uploading one or trying a demo.</div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="/upload" class="btn btn-primary">⬆️ Upload Report</a>
+            <a href="/demo/cbc" class="btn btn-outline">🧪 Try Demo</a>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </main>
+</div>
+
+{# Delete Confirmation Modal #}
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ Delete Report</div>
+    <div class="modal-body">
+      Are you sure you want to delete <strong id="deleteReportName"></strong>?<br>
+      This action cannot be undone. All associated test results and Q&A history will be permanently deleted.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <form id="deleteForm" method="POST" style="display:inline">
+        <button type="submit" class="btn btn-danger">Delete Permanently</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

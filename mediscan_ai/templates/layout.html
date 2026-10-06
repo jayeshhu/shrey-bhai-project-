@@ -1,0 +1,79 @@
+{# Sidebar and main layout macro for authenticated pages #}
+{# Usage: {% from "layout.html" import sidebar, page_layout %} #}
+
+{% macro sidebar_nav(active_page='dashboard') %}
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏥</div>
+      <div>
+        <div class="logo-name">MediScan AI</div>
+        <div class="logo-sub">Medical Analysis</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+
+    <a href="/dashboard" class="nav-item {{ 'active' if active_page == 'dashboard' }}">
+      <span class="nav-icon">📊</span>
+      <span>Dashboard</span>
+    </a>
+
+    <a href="/upload" class="nav-item {{ 'active' if active_page == 'upload' }}">
+      <span class="nav-icon">⬆️</span>
+      <span>Upload Report</span>
+    </a>
+
+    <a href="/reports" class="nav-item {{ 'active' if active_page == 'reports' }}">
+      <span class="nav-icon">📋</span>
+      <span>My Reports</span>
+    </a>
+
+    <a href="/compare" class="nav-item {{ 'active' if active_page == 'compare' }}">
+      <span class="nav-icon">⚖️</span>
+      <span>Compare Reports</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:16px">Account</div>
+
+    <a href="/profile" class="nav-item {{ 'active' if active_page == 'profile' }}">
+      <span class="nav-icon">👤</span>
+      <span>Profile</span>
+    </a>
+
+    <a href="/about" class="nav-item {{ 'active' if active_page == 'about' }}">
+      <span class="nav-icon">ℹ️</span>
+      <span>About</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:16px">Demo</div>
+
+    <a href="/demo/cbc" class="nav-item">
+      <span class="nav-icon">🩸</span>
+      <span>Try CBC Demo</span>
+    </a>
+
+    <a href="/demo/biochemistry" class="nav-item">
+      <span class="nav-icon">🔬</span>
+      <span>Try Biochem Demo</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    {% if current_user.is_authenticated %}
+    <div class="user-info">
+      <div class="user-avatar">{{ current_user.name[0].upper() }}</div>
+      <div>
+        <div class="user-name">{{ current_user.name }}</div>
+        <div class="user-email">{{ current_user.email[:28] }}{% if current_user.email|length > 28 %}…{% endif %}</div>
+      </div>
+    </div>
+    <a href="/logout" class="btn btn-outline btn-full btn-sm">
+      🚪 Sign Out
+    </a>
+    {% endif %}
+  </div>
+</aside>
+{% endmacro %}

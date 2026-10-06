@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — MediScan AI{% endblock %}
+
+{% block body %}
+<div class="app-layout">
+  {% set active_page = 'dashboard' %}{% include '_sidebar.html' %}
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="main-content">
+    <header class="top-header">
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-breadcrumb">Welcome back, {{ current_user.name }}</div>
+      </div>
+      <div class="header-actions">
+        {% if ai_configured %}
+          <div class="ai-status-badge configured">
+            <span class="ai-status-dot"></span> AI Active
+          </div>
+        {% else %}
+          <div class="ai-status-badge not-configured">
+            <span class="ai-status-dot"></span> AI Not Configured
+          </div>
+        {% endif %}
+        <a href="/upload" class="btn btn-primary btn-sm">⬆️ Upload Report</a>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      {# ── Welcome Banner ── #}
+      <div class="card mb-24" style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.08));border-color:rgba(59,130,246,0.25);">
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="font-size:48px">🏥</div>
+          <div style="flex:1">
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:6px">MediScan AI</h2>
+            <p style="color:var(--text-secondary);font-size:14px;max-width:600px">
+              Understand your medical reports with intelligent document analysis. Upload a PDF or image, and get easy-to-understand explanations of your test results.
+            </p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="/upload" class="btn btn-primary">⬆️ Upload Report</a>
+            <a href="/demo/cbc" class="btn btn-outline">🩸 Try Demo</a>
+          </div>
+        </div>
+      </div>
+
+      {# ── Stats ── #}
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon blue">📋</div>
+          <div>
+            <div class="stat-value">{{ stats.total_reports }}</div>
+            <div class="stat-label">Total Reports</div>
+          </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green">✅</div>
+          <div>
+            <div class="stat-value">{{ stats.analyzed }}</div>
+            <div class="stat-label">Analyzed</div>
+          </div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon amber">🧪</div>
+          <div>
+            <div class="stat-value">{{ stats.demo_reports }}</div>
+            <div class="stat-label">Demo Reports</div>
+          </div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon purple">⚖️</div>
+          <div>
+            <div class="stat-value">{{ 'Yes' if stats.can_compare else 'No' }}</div>
+            <div class="stat-label">Can Compare</div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Recent Reports + Quick Actions ── #}
+      <div class="grid-2">
+
+        {# Recent Reports #}
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📋 Recent Reports</div>
+              <div class="card-subtitle">Your latest uploaded reports</div>
+            </div>
+            <a href="/reports" class="btn btn-outline btn-sm">View All</a>
+          </div>
+
+          {% if recent_reports %}
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Report</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for report in recent_reports %}
+                  {% set badge_label, badge_class = report.get_status_badge() %}
+                  <tr>
+                    <td>
+                      <div class="td-name" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ report.original_filename }}">
+                        {% if report.is_demo %}⭐ {% endif %}{{ report.original_filename }}
+                      </div>
+                      <div style="font-size:11px;color:var(--text-muted)">{{ report.created_at.strftime('%d %b %Y') }}</div>
+                    </td>
+                    <td>
+                      <span class="pill" style="max-width:120px">{{ report.document_type[:20] }}{% if report.document_type|length > 20 %}…{% endif %}</span>
+                    </td>
+                    <td>
+                      <span class="badge {{ badge_class }}">{{ badge_label }}</span>
+                    </td>
+                    <td>
+                      <a href="/reports/{{ report.id }}" class="btn btn-ghost btn-sm">View →</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <div class="empty-title">No reports yet</div>
+              <div class="empty-desc">Upload a medical report to get started with AI-powered analysis.</div>
+              <a href="/upload" class="btn btn-primary">Upload First Report</a>
+            </div>
+          {% endif %}
+        </div>
+
+        {# Quick Actions + AI Status #}
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          {# Quick Actions #}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚡ Quick Actions</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <a href="/upload" class="btn btn-primary btn-full">⬆️ Upload New Report</a>
+              <a href="/reports" class="btn btn-outline btn-full">📋 View Report History</a>
+              <a href="/compare" class="btn btn-outline btn-full">⚖️ Compare Reports</a>
+            </div>
+          </div>
+
+          {# Demo Quick Start #}
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🧪 Try a Demo</div>
+              <div class="card-subtitle">No upload required</div>
+            </div>
+            <div class="demo-cards">
+              <a href="/demo/cbc" class="demo-card">
+                <div class="demo-card-icon">🩸</div>
+                <div class="demo-card-name">CBC Demo</div>
+                <div class="demo-card-desc">Complete Blood Count</div>
+              </a>
+              <a href="/demo/biochemistry" class="demo-card">
+                <div class="demo-card-icon">🔬</div>
+                <div class="demo-card-name">Biochem Demo</div>
+                <div class="demo-card-desc">Lipid & Metabolic Panel</div>
+              </a>
+            </div>
+          </div>
+
+          {# AI Status Card #}
+          {% if not ai_configured %}
+          <div class="card" style="border-color:rgba(245,158,11,0.3)">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <span style="font-size:24px">⚠️</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#FCD34D;margin-bottom:4px">AI Not Configured</div>
+                <div style="font-size:13px;color:var(--text-secondary);line-height:1.5">
+                  Add your API key to <code style="font-family:var(--font-mono);background:var(--bg-surface);padding:1px 5px;border-radius:4px">.env</code> to enable AI analysis. The app still works with extracted data.
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      {# ── Disclaimer ── #}
+      <div class="disclaimer-box mt-20">
+        <span class="disclaimer-icon">⚕️</span>
+        <span>
+          <strong>Important Notice:</strong> MediScan AI is an educational and informational tool. It does not provide medical diagnosis or treatment recommendations. Always consult a qualified healthcare professional for medical decisions.
+        </span>
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}
